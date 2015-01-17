@@ -1,4 +1,4 @@
-var PlayGame = (function (window, Event, Math, Key) {
+var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
     "use strict";
 
     function PlayGame(services) {
@@ -7,11 +7,12 @@ var PlayGame = (function (window, Event, Math, Key) {
     }
 
     PlayGame.prototype.show = function (next) {
-        var startX = 300;
-        var startY = 500;
+        var startX = 780/2;
+        var startY = 512/2;
         var startRotation = -Math.PI / 2;
 
-        var river = this.stage.drawRectangle(780/2, 1200/2, 780 - 25 - 25 + 25, 1200, '#81BEF7', true, undefined, 0);
+        var river = this.stage.drawRectangle(780 / 2, 1200 / 2, 780 - 25 - 25 + 25, 1200, '#81BEF7', true, undefined,
+            0);
 
         var rect = this.stage.drawRectangle(startX, startY, 50, 25, '#000', false, 1, 3);
         rect.rotation = startRotation;
@@ -20,77 +21,57 @@ var PlayGame = (function (window, Event, Math, Key) {
         line.anchorOffsetX = line.getWidthHalf();
         line.rotation = rect.rotation;
 
-        var waterfall = this.stage.drawRectangle(780/2, 25, 1080, 50, '#5882FA', true, undefined, 1);
-        var leftBanks = this.stage.drawRectangle(25, 1200/2, 50, 1200, '#088A08', true, undefined, 2);
-        var rightBanks = this.stage.drawRectangle(780, 1200/2, 50, 1200, '#088A08', true, undefined, 2);
-        var chaser = this.stage.drawRectangle(780/2, 1080, 1080, 50, '#B45F04', true, undefined, 1);
+        var waterfallSprite = this.stage.drawRectangle(780 / 2, 25, 1080, 50, '#5882FA', true, undefined, 1);
+        var leftBanksSprite = this.stage.drawRectangle(25, 1200 / 2, 50, 1200, '#088A08', true, undefined, 2);
+        var rightBanksSprite = this.stage.drawRectangle(780, 1200 / 2, 50, 1200, '#088A08', true, undefined, 2);
+        var chaserSprite = this.stage.drawRectangle(780 / 2, 1080, 1080, 50, '#B45F04', true, undefined, 1);
 
-        var rowBoat = {
-            setX: function (x) {
-                this.x = x;
-                this.drawable.x = x;
-                this.collision.x = x;
-                this.direction.x = x;
-            },
-            setY: function (y) {
-                this.y = y;
-                this.drawable.y = y;
-                this.direction.y = y;
-                this.collision.y = y;
-            },
-            setRotation: function (angle) {
-                this.rotation = angle;
-                this.drawable.rotation = angle;
-                this.direction.rotation = angle;
-            },
+        var rowBoat = new Entity(startX, startY, startRotation, rect, circ, line);
+        rowBoat.debug = true;
+        var chaser = new Entity(chaserSprite.x, chaserSprite.y, 0, chaserSprite, chaserSprite);
+        var waterfall = new Entity(waterfallSprite.x, waterfallSprite.y, 0, waterfallSprite, waterfallSprite);
+        var leftBanks = new Entity(leftBanksSprite.x, leftBanksSprite.y, 0, leftBanksSprite, leftBanksSprite);
+        var rightBanks = new Entity(rightBanksSprite.x, rightBanksSprite.y, 0, rightBanksSprite, rightBanksSprite);
+
+        var world = [chaser, waterfall, leftBanks, rightBanks];
+
+        var viewPort = {
             x: startX,
             y: startY,
-            rotation: startRotation,
-            forceX: 0,
-            forceY: 0,
-            drawable: rect,
-            direction: line,
-            collision: circ,
-            lastX: startX,
-            lastY: startY
+            width: 780,
+            height: 512,
+            scale: 1,
+            getCornerX: function () {
+                return Math.floor(this.x - this.width * this.scale / 2);
+            },
+            getCornerY: function () {
+                return Math.floor(this.y - this.height * this.scale / 2);
+            },
+            getEndX: function () {
+                return Math.floor(this.x + this.width * this.scale / 2);
+            },
+            getEndY: function () {
+                return Math.floor(this.y + this.height * this.scale / 2);
+            }
         };
 
-        function paddleOnPortSide() { // backbord
-            paddle(-30);
-        }
+        var debugViewPort = this.stage.drawRectangle(viewPort.x, viewPort.y,
+            viewPort.width, viewPort.height, 'red');
 
-        function paddleOnBowSide() { // star board - steuerbord
-            paddle(30);
-        }
-
-        function paddle(degrees) {
-            var angle = rect.rotation + toRadians(degrees);
-            var magnitude = 10;
-            rowBoat.forceX += magnitude * Math.cos(angle);
-            rowBoat.forceY += magnitude * Math.sin(angle);
-            rowBoat.setRotation(angle);
-        }
-
-        function toRadians(degrees) {
-            return degrees * Math.PI / 180;
-        }
-
-        // global test methods
-        window.paddleOnPortSide = paddleOnPortSide;
-        window.paddleOnBowSide = paddleOnBowSide;
+        var cox = new CoxSwain(rowBoat);
 
         var leftPressed = false;
         var rightPressed = false;
         this.events.subscribe(Event.KEY_BOARD, function (keyBoard) {
             if (!leftPressed && keyBoard[Key.LEFT]) {
                 leftPressed = true;
-                paddleOnPortSide();
+                cox.paddleOnPortSide();
             } else if (leftPressed && !keyBoard[Key.LEFT]) {
                 leftPressed = false;
             }
             if (!rightPressed && keyBoard[Key.RIGHT]) {
                 rightPressed = true;
-                paddleOnBowSide();
+                cox.paddleOnBowSide();
             } else if (rightPressed && !keyBoard[Key.RIGHT]) {
                 rightPressed = false;
             }
@@ -101,13 +82,13 @@ var PlayGame = (function (window, Event, Math, Key) {
         this.events.subscribe(Event.GAME_PAD, function (gamePad) {
             if (!leftBumper && gamePad.isLeftBumperPressed()) {
                 leftBumper = true;
-                paddleOnPortSide();
+                cox.paddleOnPortSide();
             } else if (leftBumper && !gamePad.isLeftBumperPressed()) {
                 leftBumper = false;
             }
             if (!rightBumper && gamePad.isRightBumperPressed()) {
                 rightBumper = true;
-                paddleOnBowSide();
+                cox.paddleOnBowSide();
             } else if (rightBumper && !gamePad.isRightBumperPressed()) {
                 rightBumper = false;
             }
@@ -124,30 +105,84 @@ var PlayGame = (function (window, Event, Math, Key) {
             rowBoat.forceX *= waterResistance;
             rowBoat.forceY *= waterResistance;
 
-            //rowBoat.drawable.rotation = Math.atan2(rowBoat.forceX, rowBoat.forceY);
-
             forceX += rowBoat.forceX;
             forceY += rowBoat.forceY;
 
             rowBoat.lastX = rowBoat.x;
             rowBoat.lastY = rowBoat.y;
-            rowBoat.setX(rowBoat.x + forceX);
-            rowBoat.setY(rowBoat.y + forceY);
+            rowBoat.x += forceX;
+            rowBoat.y += forceY;
         });
 
-        var buildings = [waterfall, leftBanks, rightBanks, chaser];
         this.events.subscribe(Event.TICK_COLLISION, function () {
-            buildings.forEach(function (building) {
-                if (circ.x + circ.data.radius > building.getCornerX() && circ.x - circ.data.radius < building.getEndX() &&
-                    circ.y + circ.data.radius > building.getCornerY() && circ.y - circ.data.radius < building.getEndY()) {
-                    console.log('collision');
+            world.forEach(function (element) {
+                var radius = rowBoat.collision.getWidthHalf();
+                if (rowBoat.x + radius > element.getCornerX() && rowBoat.x - radius < element.getEndX() &&
+                    rowBoat.y + radius > element.getCornerY() && rowBoat.y - radius < element.getEndY()) {
 
-                    rowBoat.setX(rowBoat.lastX);
-                    rowBoat.setY(rowBoat.lastY);
+                    rowBoat.x = rowBoat.lastX;
+                    rowBoat.y = rowBoat.lastY;
                 }
             });
         });
+
+        this.events.subscribe(Event.TICK_CAMERA, function () {
+            world.forEach(function (elem) {
+                calcScreenPosition(elem);
+            });
+            calcScreenPosition(rowBoat);
+            moveViewPort(rowBoat);
+        });
+
+        function calcScreenPosition(entity) {
+            if (entity.getEndX() < viewPort.getCornerX() || entity.getCornerX() > viewPort.getEndX() ||
+                entity.getEndY() < viewPort.getCornerY() || entity.getCornerY() > viewPort.getEndY()) {
+
+                entity.sprite.show = false;
+                if (entity.debug) {
+                    if (entity.direction) {
+                        entity.direction.show = false;
+                    }
+                    if (entity.collision) {
+                        entity.collision.show = false;
+                    }
+                }
+                return;
+            }
+
+            entity.sprite.show = true;
+
+            entity.sprite.x = entity.x - viewPort.getCornerX() * viewPort.scale;
+            entity.sprite.y = entity.y - viewPort.getCornerY() * viewPort.scale;
+            entity.sprite.rotation = entity.rotation;
+            entity.sprite.scale *= viewPort.scale;
+
+            if (entity.debug) {
+                if (entity.direction) {
+                    entity.direction.show = true;
+                    entity.direction.x = entity.sprite.x;
+                    entity.direction.y = entity.sprite.y;
+                    entity.direction.rotation = entity.sprite.rotation;
+                }
+                if (entity.collision) {
+                    entity.collision.show = true;
+                    entity.collision.x = entity.sprite.x;
+                    entity.collision.y = entity.sprite.y;
+                }
+            }
+        }
+
+        function moveViewPort(anchorEntity) {
+            //viewPort.x = anchorEntity.x;
+            viewPort.y = anchorEntity.y;
+
+            if (viewPort.x < 0)
+                viewPort.x = 0;
+
+            if (viewPort.y < 0)
+                viewPort.y = 0;
+        }
     };
 
     return PlayGame;
-})(window, Event, Math, Key);
+})(window, Event, Math, Key, CoxSwain, Entity);
