@@ -1,4 +1,4 @@
-var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
+var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, range) {
     "use strict";
 
     function PlayGame(services) {
@@ -7,16 +7,21 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
     }
 
     PlayGame.prototype.show = function (next) {
-        var startX = 780 / 2;
-        var startY = 1080 / 2;
+        var self = this;
+        var screenWidth = 780;
+        var screenHeight = 1080;
+        var startRiver = 50;
+        var endRiver = screenWidth - 50;
+        var startX = screenWidth / 2;
+        var startY = screenHeight / 2;
         var startRotation = -Math.PI / 2;
 
         var distanceDrawable = this.stage.drawText(50, 50, '0', 20);
         var farthestPoint = startY;
         var yardsDrawable = this.stage.drawText(100, 50, 'yards', 20);
 
-        var river = this.stage.drawRectangle(780 / 2, 1200 / 2, 780 - 25 - 25 + 25, 1200, '#81BEF7', true, undefined,
-            0);
+        var river = this.stage.drawRectangle(screenWidth / 2, screenHeight / 2, screenWidth - 25 - 25 + 25,
+            screenHeight, '#81BEF7', true, undefined, 0);
 
         var rect = this.stage.drawRectangle(startX, startY, 50, 25, '#000', false, 1, 3);
         rect.rotation = startRotation;
@@ -25,10 +30,14 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
         line.anchorOffsetX = line.getWidthHalf();
         line.rotation = rect.rotation;
 
-        var waterfallSprite = this.stage.drawRectangle(780 / 2, 25, 1080, 50, '#5882FA', true, undefined, 1);
-        var leftBanksSprite = this.stage.drawRectangle(25, 1200 / 2, 50, 1200, '#088A08', true, undefined, 2);
-        var rightBanksSprite = this.stage.drawRectangle(780, 1200 / 2, 50, 1200, '#088A08', true, undefined, 2);
-        var chaserSprite = this.stage.drawRectangle(780 / 2, 1080, 1080, 50, '#B45F04', true, undefined, 1);
+        var waterfallSprite = this.stage.drawRectangle(screenWidth / 2, 25, screenHeight, 50, '#5882FA', true,
+            undefined, 1);
+        var leftBanksSprite = this.stage.drawRectangle(25, screenHeight / 2, 50, screenHeight, '#088A08', true,
+            undefined, 2);
+        var rightBanksSprite = this.stage.drawRectangle(screenWidth, screenHeight / 2, 50, screenHeight, '#088A08',
+            true, undefined, 2);
+        var chaserSprite = this.stage.drawRectangle(screenWidth / 2, screenHeight, screenWidth, 50, '#B45F04', true,
+            undefined, 1);
 
         var rowBoat = new Entity(startX, startY, startRotation, rect, circ, line);
         rowBoat.debug = true;
@@ -37,9 +46,11 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
         var leftBanks = new Entity(leftBanksSprite.x, leftBanksSprite.y, 0, leftBanksSprite, leftBanksSprite);
         var rightBanks = new Entity(rightBanksSprite.x, rightBanksSprite.y, 0, rightBanksSprite, rightBanksSprite);
 
-        var stoneDrawable_1 = this.stage.drawCircle(300, 300, 10, 'red', false);
+        var obstacleRadius = 10;
+        var obstacleColor = 'red';
+        var stoneDrawable_1 = this.stage.drawCircle(300, 300, obstacleRadius, obstacleColor, false);
         var stone_1 = new Entity(stoneDrawable_1.x, stoneDrawable_1.y, 0, stoneDrawable_1, stoneDrawable_1);
-        var stoneDrawable_2 = this.stage.drawCircle(500, 500, 10, 'red', false);
+        var stoneDrawable_2 = this.stage.drawCircle(500, 500, obstacleRadius, obstacleColor, false);
         var stone_2 = new Entity(stoneDrawable_2.x, stoneDrawable_2.y, 0, stoneDrawable_2, stoneDrawable_2);
 
         var world = [chaser, waterfall, leftBanks, rightBanks, stone_1, stone_2];
@@ -47,8 +58,8 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
         var viewPort = {
             x: startX,
             y: startY,
-            width: 780,
-            height: 1080,
+            width: screenWidth,
+            height: screenHeight,
             scale: 1,
             getCornerX: function () {
                 return Math.floor(this.x - this.width * this.scale / 2);
@@ -123,20 +134,50 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
             rowBoat.x += Math.floor(forceX);
             rowBoat.y += Math.floor(forceY);
 
+            leftBanks.y = rowBoat.y;
+            rightBanks.y = rowBoat.y;
+
             chaser.y -= 2;
             if (chaser.y - rowBoat.y > chaserMaxDistance) {
                 chaser.y = rowBoat.y + chaserMaxDistance;
             }
+            removePastObstacles();
             if (rowBoat.y - waterfall.y < waterfallMinDistance) {
                 waterfall.y = rowBoat.y - waterfallMinDistance;
+                createNewObstacle();
             }
         });
+
+        function removePastObstacles() {
+            for (var i = world.length - 1; i >= 0; i--) {
+                var current = world[i];
+                if (current.y > chaser.y) {
+                    self.stage.remove(current.sprite);
+                    world.splice(i, 1);
+                }
+            }
+        }
+
+        var obstaclePause = 100;
+        var lastGeneratedObstacle = startY;
+
+        function createNewObstacle() {
+            if (lastGeneratedObstacle - waterfall.y > obstaclePause) {
+                var position = range(startRiver, endRiver);
+                var obstacleDrawable = self.stage.drawCircle(position, waterfall.y, obstacleRadius, obstacleColor,
+                    false);
+                lastGeneratedObstacle = obstacleDrawable.y;
+                var obstacle = new Entity(position, waterfall.y, 0, obstacleDrawable, obstacleDrawable);
+                world.push(obstacle);
+            }
+        }
 
         this.events.subscribe(Event.TICK_COLLISION, function () {
             world.forEach(function (element) {
                 var radius = rowBoat.collision.getWidthHalf();
                 if (element.collision.data instanceof Circle) {
-                    if ( (element.x - rowBoat.x) * (element.x - rowBoat.x) + (element.y - rowBoat.y) * (element.y - rowBoat.y) <
+                    if ((element.x - rowBoat.x) * (element.x - rowBoat.x) +
+                        (element.y - rowBoat.y) * (element.y - rowBoat.y) <
                         (radius + element.collision.getWidthHalf()) * (radius + element.collision.getWidthHalf())) {
 
                         console.log('collision with obstacle');
@@ -168,7 +209,8 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
 
         function calcPastDistance() {
             if (rowBoat.y < farthestPoint) {
-                distanceDrawable.data.msg = (parseInt(distanceDrawable.data.msg) + farthestPoint - rowBoat.y).toString();
+                distanceDrawable.data.msg = (parseInt(distanceDrawable.data.msg) + farthestPoint -
+                rowBoat.y).toString();
                 farthestPoint = rowBoat.y;
             }
         }
@@ -217,4 +259,4 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
     };
 
     return PlayGame;
-})(window, Event, Math, Key, CoxSwain, Entity, Circle);
+})(window, Event, Math, Key, CoxSwain, Entity, Circle, range);
