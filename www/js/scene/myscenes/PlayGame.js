@@ -8,35 +8,38 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
 
     PlayGame.prototype.show = function (next) {
         var self = this;
-        var screenWidth = 780;
-        var screenHeight = 1080;
-        var startRiver = 50;
-        var endRiver = screenWidth - 50;
+        var screenWidth = 256;
+        var screenHeight = 240;
+        var tileWidth = 8;
+        var startRiver = tileWidth;
+        var endRiver = screenWidth - tileWidth;
         var startX = screenWidth / 2;
         var startY = screenHeight / 2;
         var startRotation = -Math.PI / 2;
+        var upstreamSpeed = 2;
+        var chaserSpeed = 2;
 
-        var distanceDrawable = this.stage.drawText(50, 50, '0', 20);
+        var distanceDrawable = this.stage.drawText(tileWidth * 2, tileWidth * 2, '0', tileWidth);
         var farthestPoint = startY;
-        var yardsDrawable = this.stage.drawText(100, 50, 'yards', 20);
+        var yardsDrawable = this.stage.drawText(tileWidth * 4, tileWidth * 2, 'yards', tileWidth);
 
-        var river = this.stage.drawRectangle(screenWidth / 2, screenHeight / 2, screenWidth - 25 - 25 + 25,
+        var river = this.stage.drawRectangle(screenWidth / 2, screenHeight / 2, screenWidth -  tileWidth / 2 - tileWidth / 2 + tileWidth / 2,
             screenHeight, '#81BEF7', true, undefined, 0);
 
-        var rect = this.stage.drawRectangle(startX, startY, 50, 25, '#000', false, 1, 3);
+        var rect = this.stage.drawRectangle(startX, startY, tileWidth * 2, tileWidth, '#000', false, 1, 3);
         rect.rotation = startRotation;
-        var circ = this.stage.drawCircle(rect.x, rect.y, 30, '#000', false, 1, 4);
+        var circ = this.stage.drawCircle(rect.x, rect.y, tileWidth, '#000', false, 1, 4);
         var line = this.stage.drawLine(rect.x, rect.y, circ.data.radius, '#000', 1, 4);
         line.anchorOffsetX = line.getWidthHalf();
         line.rotation = rect.rotation;
 
-        var waterfallSprite = this.stage.drawRectangle(screenWidth / 2, 25, screenHeight, 50, '#5882FA', true,
+        var waterfallSprite = this.stage.drawRectangle(screenWidth / 2, tileWidth / 2, screenHeight, tileWidth, '#5882FA', true,
             undefined, 1);
-        var leftBanksSprite = this.stage.drawRectangle(25, screenHeight / 2, 50, screenHeight, '#088A08', true,
+        var leftBanksSprite = this.stage.drawRectangle(tileWidth / 2, screenHeight / 2, tileWidth, screenHeight, '#088A08', true,
             undefined, 2);
-        var rightBanksSprite = this.stage.drawRectangle(screenWidth, screenHeight / 2, 50, screenHeight, '#088A08',
+        var rightBanksSprite = this.stage.drawRectangle(screenWidth, screenHeight / 2, tileWidth, screenHeight, '#088A08',
             true, undefined, 2);
-        var chaserSprite = this.stage.drawRectangle(screenWidth / 2, screenHeight, screenWidth, 50, '#B45F04', true,
+        var chaserSprite = this.stage.drawRectangle(screenWidth / 2, screenHeight, screenWidth, tileWidth, '#B45F04', true,
             undefined, 1);
 
         var rowBoat = new Entity(startX, startY, startRotation, rect, circ, line);
@@ -46,11 +49,11 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
         var leftBanks = new Entity(leftBanksSprite.x, leftBanksSprite.y, 0, leftBanksSprite, leftBanksSprite);
         var rightBanks = new Entity(rightBanksSprite.x, rightBanksSprite.y, 0, rightBanksSprite, rightBanksSprite);
 
-        var obstacleRadius = 10;
+        var obstacleRadius = tileWidth;
         var obstacleColor = 'red';
-        var stoneDrawable_1 = this.stage.drawCircle(300, 300, obstacleRadius, obstacleColor, false);
+        var stoneDrawable_1 = this.stage.drawCircle(screenHeight / 4, screenHeight / 4, obstacleRadius, obstacleColor, false);
         var stone_1 = new Entity(stoneDrawable_1.x, stoneDrawable_1.y, 0, stoneDrawable_1, stoneDrawable_1);
-        var stoneDrawable_2 = this.stage.drawCircle(500, 500, obstacleRadius, obstacleColor, false);
+        var stoneDrawable_2 = this.stage.drawCircle(screenHeight / 4 * 3, screenHeight / 2, obstacleRadius, obstacleColor, false);
         var stone_2 = new Entity(stoneDrawable_2.x, stoneDrawable_2.y, 0, stoneDrawable_2, stoneDrawable_2);
 
         var world = [chaser, waterfall, leftBanks, rightBanks, stone_1, stone_2];
@@ -113,14 +116,14 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             }
         });
 
-        var chaserMaxDistance = 300;
-        var waterfallMinDistance = 300;
+        var chaserMaxDistance = screenHeight / 2;
+        var waterfallMinDistance = screenHeight / 2;
         this.events.subscribe(Event.TICK_MOVE, function () {
             var forceX = 0;
             var forceY = 0;
 
             // current - river upstream
-            forceY += 2;
+            forceY += upstreamSpeed;
 
             var waterResistance = 0.9;
             rowBoat.forceX *= waterResistance;
@@ -137,7 +140,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             leftBanks.y = rowBoat.y;
             rightBanks.y = rowBoat.y;
 
-            chaser.y -= 2;
+            chaser.y -= chaserSpeed;
             if (chaser.y - rowBoat.y > chaserMaxDistance) {
                 chaser.y = rowBoat.y + chaserMaxDistance;
             }
@@ -158,7 +161,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             }
         }
 
-        var obstaclePause = 100;
+        var obstaclePause = screenHeight / 4;
         var lastGeneratedObstacle = startY;
 
         function createNewObstacle() {
