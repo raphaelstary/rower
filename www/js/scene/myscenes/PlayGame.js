@@ -120,6 +120,11 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
             rowBoat.lastY = rowBoat.y;
             rowBoat.x += Math.floor(forceX);
             rowBoat.y += Math.floor(forceY);
+
+            chaser.y -= 2;
+            if (chaser.y - rowBoat.y > 300) {
+                chaser.y = rowBoat.y + 300;
+            }
         });
 
         this.events.subscribe(Event.TICK_COLLISION, function () {
