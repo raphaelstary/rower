@@ -102,6 +102,8 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
             }
         });
 
+        var chaserMaxDistance = 300;
+        var waterfallMinDistance = 300;
         this.events.subscribe(Event.TICK_MOVE, function () {
             var forceX = 0;
             var forceY = 0;
@@ -122,8 +124,11 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
             rowBoat.y += Math.floor(forceY);
 
             chaser.y -= 2;
-            if (chaser.y - rowBoat.y > 300) {
-                chaser.y = rowBoat.y + 300;
+            if (chaser.y - rowBoat.y > chaserMaxDistance) {
+                chaser.y = rowBoat.y + chaserMaxDistance;
+            }
+            if (rowBoat.y - waterfall.y < waterfallMinDistance) {
+                waterfall.y = rowBoat.y - waterfallMinDistance;
             }
         });
 
@@ -207,14 +212,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
         }
 
         function moveViewPort(anchorEntity) {
-            //viewPort.x = anchorEntity.x;
             viewPort.y = anchorEntity.y;
-
-            if (viewPort.x < 0)
-                viewPort.x = 0;
-
-            if (viewPort.y < 0)
-                viewPort.y = 0;
         }
     };
 
