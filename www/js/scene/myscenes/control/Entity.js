@@ -25,7 +25,7 @@ var Entity = (function (Math) {
     }
 
     Entity.prototype.getCornerX = function () {
-        if (this.sprite.rotation == 0 || this.sprite.rotation == Math.PI) {
+        if (!this.sprite.rotation || this.sprite.rotation == 0 || this.sprite.rotation == Math.PI) {
             return this.x - this.sprite.getWidthHalf();
         } else {
             var height = this.sprite.getHeight();
@@ -38,7 +38,7 @@ var Entity = (function (Math) {
     };
 
     Entity.prototype.getCornerY = function () {
-        if (this.sprite.rotation == 0 || this.sprite.rotation == Math.PI) {
+        if (!this.sprite.rotation || this.sprite.rotation == 0 || this.sprite.rotation == Math.PI) {
             return this.y - this.sprite.getHeightHalf();
         } else {
             var height = this.sprite.getHeight();
@@ -51,7 +51,7 @@ var Entity = (function (Math) {
     };
 
     Entity.prototype.getEndX = function () {
-        if (this.sprite.rotation == 0 || this.sprite.rotation == Math.PI) {
+        if (!this.sprite.rotation || this.sprite.rotation == 0 || this.sprite.rotation == Math.PI) {
             return this.x + this.sprite.getWidthHalf();
         } else {
             var height = this.sprite.getHeight();
@@ -64,7 +64,7 @@ var Entity = (function (Math) {
     };
 
     Entity.prototype.getEndY = function () {
-        if (this.sprite.rotation == 0) {
+        if (!this.sprite.rotation || this.sprite.rotation == 0 || this.sprite.rotation == Math.PI) {
             return this.y + this.sprite.getHeightHalf();
         } else {
             var height = this.sprite.getHeight();

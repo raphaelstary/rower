@@ -4,6 +4,8 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
     function PlayGame(services) {
         this.stage = services.stage;
         this.events = services.events;
+        this.sceneStorage = services.sceneStorage;
+        this.timer = services.timer;
     }
 
     PlayGame.prototype.show = function (next) {
@@ -11,17 +13,19 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
         var screenWidth = 256;
         var screenHeight = 240;
         var tileWidth = 8;
-        var startRiver = tileWidth;
-        var endRiver = screenWidth - tileWidth;
+        var obstacleRadius = tileWidth;
+        var obstacleColor = 'red';
+        var startRiver = tileWidth + obstacleRadius;
+        var endRiver = screenWidth - tileWidth - obstacleRadius;
         var startX = screenWidth / 2;
         var startY = screenHeight / 2;
         var startRotation = -Math.PI / 2;
         var upstreamSpeed = 2;
         var chaserSpeed = 2;
 
-        var distanceDrawable = this.stage.drawText(tileWidth * 2, tileWidth * 2, '0', tileWidth);
+        var distanceDrawable = this.stage.drawText(tileWidth * 2, tileWidth * 2, '0', tileWidth, 'Arial');
         var farthestPoint = startY;
-        var yardsDrawable = this.stage.drawText(tileWidth * 4, tileWidth * 2, 'yards', tileWidth);
+        var yardsDrawable = this.stage.drawText(tileWidth * 5, tileWidth * 2, 'YARDS', tileWidth, 'Arial');
 
         var river = this.stage.drawRectangle(screenWidth / 2, screenHeight / 2, screenWidth -  tileWidth / 2 - tileWidth / 2 + tileWidth / 2,
             screenHeight, '#81BEF7', true, undefined, 0);
@@ -39,7 +43,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             undefined, 2);
         var rightBanksSprite = this.stage.drawRectangle(screenWidth, screenHeight / 2, tileWidth, screenHeight, '#088A08',
             true, undefined, 2);
-        var chaserSprite = this.stage.drawRectangle(screenWidth / 2, screenHeight, screenWidth, tileWidth, '#B45F04', true,
+        var chaserSprite = this.stage.drawRectangle(screenWidth / 2, screenHeight * 2, screenWidth, tileWidth, '#B45F04', true,
             undefined, 1);
 
         var rowBoat = new Entity(startX, startY, startRotation, rect, circ, line);
@@ -49,8 +53,6 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
         var leftBanks = new Entity(leftBanksSprite.x, leftBanksSprite.y, 0, leftBanksSprite, leftBanksSprite);
         var rightBanks = new Entity(rightBanksSprite.x, rightBanksSprite.y, 0, rightBanksSprite, rightBanksSprite);
 
-        var obstacleRadius = tileWidth;
-        var obstacleColor = 'red';
         var stoneDrawable_1 = this.stage.drawCircle(screenHeight / 4, screenHeight / 4, obstacleRadius, obstacleColor, false);
         var stone_1 = new Entity(stoneDrawable_1.x, stoneDrawable_1.y, 0, stoneDrawable_1, stoneDrawable_1);
         var stoneDrawable_2 = this.stage.drawCircle(screenHeight / 4 * 3, screenHeight / 2, obstacleRadius, obstacleColor, false);
@@ -84,7 +86,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
 
         var leftPressed = false;
         var rightPressed = false;
-        this.events.subscribe(Event.KEY_BOARD, function (keyBoard) {
+        var keyBoardListener = this.events.subscribe(Event.KEY_BOARD, function (keyBoard) {
             if (!leftPressed && keyBoard[Key.LEFT]) {
                 leftPressed = true;
                 cox.paddleOnPortSide();
@@ -101,7 +103,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
 
         var leftBumper = false;
         var rightBumper = false;
-        this.events.subscribe(Event.GAME_PAD, function (gamePad) {
+        var gamePadListener = this.events.subscribe(Event.GAME_PAD, function (gamePad) {
             if (!leftBumper && gamePad.isLeftBumperPressed()) {
                 leftBumper = true;
                 cox.paddleOnPortSide();
@@ -118,7 +120,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
 
         var chaserMaxDistance = screenHeight / 2;
         var waterfallMinDistance = screenHeight / 2;
-        this.events.subscribe(Event.TICK_MOVE, function () {
+        var moveListener = this.events.subscribe(Event.TICK_MOVE, function () {
             var forceX = 0;
             var forceY = 0;
 
@@ -175,7 +177,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             }
         }
 
-        this.events.subscribe(Event.TICK_COLLISION, function () {
+        var collisionListener = this.events.subscribe(Event.TICK_COLLISION, function () {
             world.forEach(function (element) {
                 var radius = rowBoat.collision.getWidthHalf();
                 if (element.collision.data instanceof Circle) {
@@ -183,25 +185,25 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
                         (element.y - rowBoat.y) * (element.y - rowBoat.y) <
                         (radius + element.collision.getWidthHalf()) * (radius + element.collision.getWidthHalf())) {
 
-                        console.log('collision with obstacle');
-
-                        rowBoat.x = rowBoat.lastX;
-                        rowBoat.y = rowBoat.lastY;
+                        end();
+                        //console.log('collision with obstacle');
+                        //rowBoat.x = rowBoat.lastX;
+                        //rowBoat.y = rowBoat.lastY;
                     }
                 } else {
                     if (rowBoat.x + radius > element.getCornerX() && rowBoat.x - radius < element.getEndX() &&
                         rowBoat.y + radius > element.getCornerY() && rowBoat.y - radius < element.getEndY()) {
 
-                        console.log('collision with banks');
-
-                        rowBoat.x = rowBoat.lastX;
-                        rowBoat.y = rowBoat.lastY;
+                        end();
+                        //console.log('collision with banks');
+                        //rowBoat.x = rowBoat.lastX;
+                        //rowBoat.y = rowBoat.lastY;
                     }
                 }
             });
         });
 
-        this.events.subscribe(Event.TICK_CAMERA, function () {
+        var cameraListener = this.events.subscribe(Event.TICK_CAMERA, function () {
             world.forEach(function (elem) {
                 calcScreenPosition(elem);
             });
@@ -212,9 +214,8 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
 
         function calcPastDistance() {
             if (rowBoat.y < farthestPoint) {
-                distanceDrawable.data.msg = (parseInt(distanceDrawable.data.msg) + farthestPoint -
-                rowBoat.y).toString();
                 farthestPoint = rowBoat.y;
+                distanceDrawable.data.msg = (startY - farthestPoint).toString();
             }
         }
 
@@ -258,6 +259,30 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
 
         function moveViewPort(anchorEntity) {
             viewPort.y = anchorEntity.y;
+        }
+
+        function end() {
+            self.sceneStorage.points = startY - farthestPoint;
+
+            self.stage.remove(distanceDrawable);
+            self.stage.remove(yardsDrawable);
+            self.stage.remove(river);
+
+            self.stage.remove(rowBoat.sprite);
+            self.stage.remove(rowBoat.collision);
+            self.stage.remove(rowBoat.direction);
+
+            world.forEach(function (elem) {
+                self.stage.remove(elem.sprite);
+            });
+
+            self.events.unsubscribe(keyBoardListener);
+            self.events.unsubscribe(gamePadListener);
+            self.events.unsubscribe(moveListener);
+            self.events.unsubscribe(collisionListener);
+            self.events.unsubscribe(cameraListener);
+
+            self.timer.doLater(next, 1);
         }
     };
 
