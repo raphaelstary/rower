@@ -1,6 +1,15 @@
 var Entity = (function (Math) {
     "use strict";
-
+    /**
+     *
+     * @param x
+     * @param y
+     * @param rotation
+     * @param sprite
+     * @param collision
+     * @param direction
+     * @constructor
+     */
     function Entity(x, y, rotation, sprite, collision, direction) {
         this.x = x;
         this.y = y;

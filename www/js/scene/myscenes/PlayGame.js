@@ -1,4 +1,4 @@
-var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
+var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle) {
     "use strict";
 
     function PlayGame(services) {
@@ -7,9 +7,13 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
     }
 
     PlayGame.prototype.show = function (next) {
-        var startX = 780/2;
-        var startY = 512/2;
+        var startX = 780 / 2;
+        var startY = 1080 / 2;
         var startRotation = -Math.PI / 2;
+
+        var distanceDrawable = this.stage.drawText(50, 50, '0', 20);
+        var farthestPoint = startY;
+        var yardsDrawable = this.stage.drawText(100, 50, 'yards', 20);
 
         var river = this.stage.drawRectangle(780 / 2, 1200 / 2, 780 - 25 - 25 + 25, 1200, '#81BEF7', true, undefined,
             0);
@@ -33,13 +37,18 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
         var leftBanks = new Entity(leftBanksSprite.x, leftBanksSprite.y, 0, leftBanksSprite, leftBanksSprite);
         var rightBanks = new Entity(rightBanksSprite.x, rightBanksSprite.y, 0, rightBanksSprite, rightBanksSprite);
 
-        var world = [chaser, waterfall, leftBanks, rightBanks];
+        var stoneDrawable_1 = this.stage.drawCircle(300, 300, 10, 'red', false);
+        var stone_1 = new Entity(stoneDrawable_1.x, stoneDrawable_1.y, 0, stoneDrawable_1, stoneDrawable_1);
+        var stoneDrawable_2 = this.stage.drawCircle(500, 500, 10, 'red', false);
+        var stone_2 = new Entity(stoneDrawable_2.x, stoneDrawable_2.y, 0, stoneDrawable_2, stoneDrawable_2);
+
+        var world = [chaser, waterfall, leftBanks, rightBanks, stone_1, stone_2];
 
         var viewPort = {
             x: startX,
             y: startY,
             width: 780,
-            height: 512,
+            height: 1080,
             scale: 1,
             getCornerX: function () {
                 return Math.floor(this.x - this.width * this.scale / 2);
@@ -55,8 +64,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
             }
         };
 
-        var debugViewPort = this.stage.drawRectangle(viewPort.x, viewPort.y,
-            viewPort.width, viewPort.height, 'red');
+        var debugViewPort = this.stage.drawRectangle(viewPort.x, viewPort.y, viewPort.width, viewPort.height, 'red');
 
         var cox = new CoxSwain(rowBoat);
 
@@ -110,18 +118,31 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
 
             rowBoat.lastX = rowBoat.x;
             rowBoat.lastY = rowBoat.y;
-            rowBoat.x += forceX;
-            rowBoat.y += forceY;
+            rowBoat.x += Math.floor(forceX);
+            rowBoat.y += Math.floor(forceY);
         });
 
         this.events.subscribe(Event.TICK_COLLISION, function () {
             world.forEach(function (element) {
                 var radius = rowBoat.collision.getWidthHalf();
-                if (rowBoat.x + radius > element.getCornerX() && rowBoat.x - radius < element.getEndX() &&
-                    rowBoat.y + radius > element.getCornerY() && rowBoat.y - radius < element.getEndY()) {
+                if (element.collision.data instanceof Circle) {
+                    if ( (element.x - rowBoat.x) * (element.x - rowBoat.x) + (element.y - rowBoat.y) * (element.y - rowBoat.y) <
+                        (radius + element.collision.getWidthHalf()) * (radius + element.collision.getWidthHalf())) {
 
-                    rowBoat.x = rowBoat.lastX;
-                    rowBoat.y = rowBoat.lastY;
+                        console.log('collision with obstacle');
+
+                        rowBoat.x = rowBoat.lastX;
+                        rowBoat.y = rowBoat.lastY;
+                    }
+                } else {
+                    if (rowBoat.x + radius > element.getCornerX() && rowBoat.x - radius < element.getEndX() &&
+                        rowBoat.y + radius > element.getCornerY() && rowBoat.y - radius < element.getEndY()) {
+
+                        console.log('collision with banks');
+
+                        rowBoat.x = rowBoat.lastX;
+                        rowBoat.y = rowBoat.lastY;
+                    }
                 }
             });
         });
@@ -132,7 +153,15 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
             });
             calcScreenPosition(rowBoat);
             moveViewPort(rowBoat);
+            calcPastDistance();
         });
+
+        function calcPastDistance() {
+            if (rowBoat.y < farthestPoint) {
+                distanceDrawable.data.msg = (parseInt(distanceDrawable.data.msg) + farthestPoint - rowBoat.y).toString();
+                farthestPoint = rowBoat.y;
+            }
+        }
 
         function calcScreenPosition(entity) {
             if (entity.getEndX() < viewPort.getCornerX() || entity.getCornerX() > viewPort.getEndX() ||
@@ -185,4 +214,4 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity) {
     };
 
     return PlayGame;
-})(window, Event, Math, Key, CoxSwain, Entity);
+})(window, Event, Math, Key, CoxSwain, Entity, Circle);
