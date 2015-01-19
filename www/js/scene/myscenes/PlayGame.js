@@ -27,36 +27,47 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
         var farthestPoint = startY;
         var yardsDrawable = this.stage.drawText(tileWidth * 5, tileWidth * 2, 'YARDS', tileWidth, 'Arial');
 
-        var river = this.stage.drawRectangle(screenWidth / 2, screenHeight / 2, screenWidth -  tileWidth / 2 - tileWidth / 2 + tileWidth / 2,
-            screenHeight, '#81BEF7', true, undefined, 0);
+        var river = this.stage.drawFresh(screenWidth / 2, screenHeight / 2, 'river', 0);
 
-        var rect = this.stage.drawRectangle(startX, startY, tileWidth * 2, tileWidth, '#000', false, 1, 3);
+        var rect = this.stage.drawFresh(startX, startY, 'rowboat', 3);
+            //this.stage.drawRectangle(startX, startY, tileWidth * 2, tileWidth, '#000', false, 1, 3);
         rect.rotation = startRotation;
         var circ = this.stage.drawCircle(rect.x, rect.y, tileWidth, '#000', false, 1, 4);
+        this.stage.remove(circ);
         var line = this.stage.drawLine(rect.x, rect.y, circ.data.radius, '#000', 1, 4);
+        this.stage.remove(line);
         line.anchorOffsetX = line.getWidthHalf();
         line.rotation = rect.rotation;
 
         var waterfallSprite = this.stage.drawRectangle(screenWidth / 2, tileWidth / 2, screenHeight, tileWidth, '#5882FA', true,
             undefined, 1);
+        this.stage.remove(waterfallSprite);
         var leftBanksSprite = this.stage.drawRectangle(tileWidth / 2, screenHeight / 2, tileWidth, screenHeight, '#088A08', true,
             undefined, 2);
+        this.stage.remove(leftBanksSprite);
         var rightBanksSprite = this.stage.drawRectangle(screenWidth, screenHeight / 2, tileWidth, screenHeight, '#088A08',
             true, undefined, 2);
-        var chaserSprite = this.stage.drawRectangle(screenWidth / 2, screenHeight * 2, screenWidth, tileWidth, '#B45F04', true,
+        this.stage.remove(rightBanksSprite);
+        var chaserSprite = this.stage.drawFresh(screenWidth / 2, screenHeight * 2, 'chaser', 1);
+        var chaserCollision = this.stage.drawRectangle(screenWidth / 2, screenHeight * 2, screenWidth, tileWidth, '#B45F04', true,
             undefined, 1);
+        this.stage.remove(chaserCollision);
 
         var rowBoat = new Entity(startX, startY, startRotation, rect, circ, line);
-        rowBoat.debug = true;
-        var chaser = new Entity(chaserSprite.x, chaserSprite.y, 0, chaserSprite, chaserSprite);
+        rowBoat.debug = false;
+        var chaser = new Entity(chaserSprite.x, chaserSprite.y, 0, chaserSprite, chaserCollision);
         var waterfall = new Entity(waterfallSprite.x, waterfallSprite.y, 0, waterfallSprite, waterfallSprite);
         var leftBanks = new Entity(leftBanksSprite.x, leftBanksSprite.y, 0, leftBanksSprite, leftBanksSprite);
         var rightBanks = new Entity(rightBanksSprite.x, rightBanksSprite.y, 0, rightBanksSprite, rightBanksSprite);
 
-        var stoneDrawable_1 = this.stage.drawCircle(screenHeight / 4, screenHeight / 4, obstacleRadius, obstacleColor, false);
-        var stone_1 = new Entity(stoneDrawable_1.x, stoneDrawable_1.y, 0, stoneDrawable_1, stoneDrawable_1);
-        var stoneDrawable_2 = this.stage.drawCircle(screenHeight / 4 * 3, screenHeight / 2, obstacleRadius, obstacleColor, false);
-        var stone_2 = new Entity(stoneDrawable_2.x, stoneDrawable_2.y, 0, stoneDrawable_2, stoneDrawable_2);
+        var stoneDrawable_1 = this.stage.drawFresh(screenHeight / 4, screenHeight / 4, 'stone');
+        var stoneCollision_1 = this.stage.drawCircle(screenHeight / 4, screenHeight / 4, obstacleRadius, obstacleColor, false);
+        this.stage.remove(stoneCollision_1);
+        var stone_1 = new Entity(stoneDrawable_1.x, stoneDrawable_1.y, 0, stoneDrawable_1, stoneCollision_1);
+        var stoneDrawable_2 = this.stage.drawFresh(screenHeight / 4 * 3, screenHeight / 2, 'stone');
+        var stoneCollision_2 = this.stage.drawCircle(screenHeight / 4 * 3, screenHeight / 2, obstacleRadius, obstacleColor, false);
+        this.stage.remove(stoneCollision_2);
+        var stone_2 = new Entity(stoneDrawable_2.x, stoneDrawable_2.y, 0, stoneDrawable_2, stoneCollision_2);
 
         var world = [chaser, waterfall, leftBanks, rightBanks, stone_1, stone_2];
 
@@ -80,7 +91,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             }
         };
 
-        var debugViewPort = this.stage.drawRectangle(viewPort.x, viewPort.y, viewPort.width, viewPort.height, 'red');
+        //var debugViewPort = this.stage.drawRectangle(viewPort.x, viewPort.y, viewPort.width, viewPort.height, 'red');
 
         var cox = new CoxSwain(rowBoat);
 
@@ -158,6 +169,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
                 var current = world[i];
                 if (current.y > chaser.y) {
                     self.stage.remove(current.sprite);
+                    self.stage.remove(current.collision);
                     world.splice(i, 1);
                 }
             }
@@ -169,10 +181,12 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
         function createNewObstacle() {
             if (lastGeneratedObstacle - waterfall.y > obstaclePause) {
                 var position = range(startRiver, endRiver);
-                var obstacleDrawable = self.stage.drawCircle(position, waterfall.y, obstacleRadius, obstacleColor,
+                var obstacleDrawable = self.stage.drawFresh(position, waterfall.y, 'stone');
+                var obstacleCollision = self.stage.drawCircle(position, waterfall.y, obstacleRadius, obstacleColor,
                     false);
+                self.stage.remove(obstacleCollision);
                 lastGeneratedObstacle = obstacleDrawable.y;
-                var obstacle = new Entity(position, waterfall.y, 0, obstacleDrawable, obstacleDrawable);
+                var obstacle = new Entity(position, waterfall.y, 0, obstacleDrawable, obstacleCollision);
                 world.push(obstacle);
             }
         }
@@ -274,6 +288,7 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
 
             world.forEach(function (elem) {
                 self.stage.remove(elem.sprite);
+                self.stage.remove(elem.collision);
             });
 
             self.events.unsubscribe(keyBoardListener);
