@@ -30,7 +30,6 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
         var river = this.stage.drawFresh(screenWidth / 2, screenHeight / 2, 'river', 0);
 
         var rect = this.stage.drawFresh(startX, startY, 'rowboat', 3);
-            //this.stage.drawRectangle(startX, startY, tileWidth * 2, tileWidth, '#000', false, 1, 3);
         rect.rotation = startRotation;
         var circ = this.stage.drawCircle(rect.x, rect.y, tileWidth, '#000', false, 1, 4);
         this.stage.remove(circ);
@@ -91,8 +90,6 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             }
         };
 
-        //var debugViewPort = this.stage.drawRectangle(viewPort.x, viewPort.y, viewPort.width, viewPort.height, 'red');
-
         var cox = new CoxSwain(rowBoat);
 
         var leftPressed = false;
@@ -145,8 +142,6 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
             forceX += rowBoat.forceX;
             forceY += rowBoat.forceY;
 
-            rowBoat.lastX = rowBoat.x;
-            rowBoat.lastY = rowBoat.y;
             rowBoat.x += Math.floor(forceX);
             rowBoat.y += Math.floor(forceY);
 
@@ -200,18 +195,12 @@ var PlayGame = (function (window, Event, Math, Key, CoxSwain, Entity, Circle, ra
                         (radius + element.collision.getWidthHalf()) * (radius + element.collision.getWidthHalf())) {
 
                         end();
-                        //console.log('collision with obstacle');
-                        //rowBoat.x = rowBoat.lastX;
-                        //rowBoat.y = rowBoat.lastY;
                     }
                 } else {
                     if (rowBoat.x + radius > element.getCornerX() && rowBoat.x - radius < element.getEndX() &&
                         rowBoat.y + radius > element.getCornerY() && rowBoat.y - radius < element.getEndY()) {
 
                         end();
-                        //console.log('collision with banks');
-                        //rowBoat.x = rowBoat.lastX;
-                        //rowBoat.y = rowBoat.lastY;
                     }
                 }
             });
