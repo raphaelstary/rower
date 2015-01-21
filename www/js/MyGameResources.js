@@ -13,7 +13,7 @@ var MyGameResources = (function (ImageResourceHelper) {
 
     function processFiles() {
         // process your downloaded files
-        var gfxCache = ImageResourceHelper.process(images);
+        var gfxCache = ImageResourceHelper.process(images, 256, 240, 240);
 
         return {
             // services created with downloaded files
